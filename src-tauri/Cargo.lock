@@ -947,6 +947,7 @@ dependencies = [
 name = "exif-viewer"
 version = "0.1.0"
 dependencies = [
+ "flate2",
  "kamadak-exif",
  "serde",
  "serde_json",
