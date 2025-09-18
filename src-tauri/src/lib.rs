@@ -1,4 +1,4 @@
-use kamadak_exif::Reader;
+use exif::Reader;
 use serde::Serialize;
 use std::{fs::File, io::BufReader};
 
