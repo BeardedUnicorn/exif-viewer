@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { type ChangeEvent, useCallback, useMemo, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import PhotoLibraryIcon from "@mui/icons-material/PhotoLibrary";
@@ -19,6 +19,7 @@ import {
   TableHead,
   TableRow,
   Toolbar,
+  TextField,
   Typography,
 } from "@mui/material";
 
@@ -26,6 +27,11 @@ interface ExifField {
   tag: string;
   ifd: string;
   value: string;
+}
+
+interface AestheticMatch {
+  path: string;
+  score: number;
 }
 
 const IMAGE_FILTERS = [
@@ -58,13 +64,34 @@ function formatPath(path: string | null): string {
   return directory ? `${fileName} — ${directory}` : fileName;
 }
 
+function getFileName(path: string): string {
+  const separator = path.includes("\\") ? "\\" : "/";
+  const parts = path.split(separator).filter(Boolean);
+  if (parts.length === 0) {
+    return path;
+  }
+  return parts[parts.length - 1];
+}
+
 function App() {
   const [fields, setFields] = useState<ExifField[]>([]);
   const [filePath, setFilePath] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [folderPath, setFolderPath] = useState<string | null>(null);
+  const [scanResults, setScanResults] = useState<AestheticMatch[]>([]);
+  const [scanLoading, setScanLoading] = useState(false);
+  const [scanError, setScanError] = useState<string | null>(null);
+  const [scanAttempted, setScanAttempted] = useState(false);
+  const [minScoreInput, setMinScoreInput] = useState("0.75");
+
   const hasData = fields.length > 0;
+  const hasScanResults = scanResults.length > 0;
+  const parsedMinScore = useMemo(() => {
+    const parsed = Number.parseFloat(minScoreInput);
+    return Number.isFinite(parsed) ? parsed : null;
+  }, [minScoreInput]);
 
   const handleOpenFile = useCallback(async () => {
     setError(null);
@@ -104,6 +131,66 @@ function App() {
     }
   }, []);
 
+  const scanFolder = useCallback(
+    async (path: string) => {
+      const threshold = Number.parseFloat(minScoreInput);
+      if (!Number.isFinite(threshold)) {
+        setScanError("Enter a valid minimum score before scanning.");
+        setScanResults([]);
+        setScanAttempted(true);
+        return;
+      }
+
+      setScanLoading(true);
+      setScanError(null);
+      setScanAttempted(true);
+      setScanResults([]);
+
+      try {
+        const results = await invoke<AestheticMatch[]>("find_aesthetic_images", {
+          path,
+          min_score: threshold,
+        });
+        setScanResults(results);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        setScanResults([]);
+        setScanError(message || "Unable to scan the selected folder.");
+      } finally {
+        setScanLoading(false);
+      }
+    },
+    [minScoreInput]
+  );
+
+  const handleOpenFolder = useCallback(async () => {
+    const selection = await open({
+      directory: true,
+      multiple: false,
+    });
+
+    if (!selection) {
+      return;
+    }
+
+    const selectedPath = Array.isArray(selection) ? selection[0] : selection;
+    setFolderPath(selectedPath);
+    await scanFolder(selectedPath);
+  }, [scanFolder]);
+
+  const handleRescan = useCallback(() => {
+    if (folderPath) {
+      void scanFolder(folderPath);
+    }
+  }, [folderPath, scanFolder]);
+
+  const handleMinScoreChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      setMinScoreInput(event.target.value);
+    },
+    []
+  );
+
   const summaryText = useMemo(() => {
     if (!filePath) {
       return "Select an image to inspect its metadata.";
@@ -123,6 +210,30 @@ function App() {
 
     return `${fields.length} metadata entr${fields.length === 1 ? "y" : "ies"} found.`;
   }, [error, fields.length, filePath, hasData, loading]);
+
+  const scanSummaryText = useMemo(() => {
+    if (!folderPath) {
+      return "Select a folder to find images with an aesthetic score above a threshold.";
+    }
+
+    if (scanLoading) {
+      return "Scanning folder…";
+    }
+
+    if (scanError) {
+      return "Unable to complete the folder scan.";
+    }
+
+    if (hasScanResults && parsedMinScore !== null) {
+      return `${scanResults.length} image${scanResults.length === 1 ? "" : "s"} found with an aesthetic score ≥ ${parsedMinScore}.`;
+    }
+
+    if (scanAttempted && parsedMinScore !== null) {
+      return `No images found with an aesthetic score of at least ${parsedMinScore}.`;
+    }
+
+    return "Choose \"Browse for folder\" to begin scanning.";
+  }, [folderPath, hasScanResults, parsedMinScore, scanAttempted, scanError, scanLoading, scanResults.length]);
 
   return (
     <Box sx={{ minHeight: "100vh", bgcolor: (theme) => theme.palette.background.default }}>
@@ -172,6 +283,82 @@ function App() {
                 <Alert severity="info" sx={{ mt: 2 }}>
                   No EXIF metadata was found for this image.
                 </Alert>
+              )}
+            </Stack>
+          </Paper>
+
+          <Paper elevation={0} variant="outlined" sx={{ p: 3 }}>
+            <Stack spacing={2}>
+              <Typography variant="h6">Aesthetic score finder</Typography>
+              <Typography variant="body2" color="text.secondary">
+                {scanSummaryText}
+              </Typography>
+              <Stack direction={{ xs: "column", sm: "row" }} spacing={2} alignItems="center">
+                <TextField
+                  label="Minimum score"
+                  type="number"
+                  value={minScoreInput}
+                  onChange={handleMinScoreChange}
+                  inputProps={{ step: 0.01, min: 0 }}
+                  size="small"
+                  sx={{ width: { xs: "100%", sm: 180 } }}
+                />
+                <Stack direction="row" spacing={2} sx={{ width: { xs: "100%", sm: "auto" } }}>
+                  <Button
+                    variant="contained"
+                    startIcon={<PhotoLibraryIcon />}
+                    onClick={handleOpenFolder}
+                    disabled={scanLoading}
+                    fullWidth
+                  >
+                    {folderPath ? "Browse different folder" : "Browse for folder"}
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    onClick={handleRescan}
+                    disabled={scanLoading || !folderPath}
+                    fullWidth
+                  >
+                    Rescan
+                  </Button>
+                </Stack>
+                {scanLoading && <CircularProgress size={24} />}
+              </Stack>
+              {folderPath && (
+                <Typography variant="body2" sx={{ wordBreak: "break-word" }} color="text.secondary">
+                  {formatPath(folderPath)}
+                </Typography>
+              )}
+              {scanError && !scanLoading && (
+                <Alert severity="error">{scanError}</Alert>
+              )}
+              {scanAttempted && !scanLoading && !scanError && !hasScanResults && (
+                <Alert severity="info">No images matched the selected threshold.</Alert>
+              )}
+              {hasScanResults && (
+                <TableContainer>
+                  <Table size="small" aria-label="Aesthetic score results table">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell sx={{ width: "30%" }}>File name</TableCell>
+                        <TableCell sx={{ width: "20%" }}>Score</TableCell>
+                        <TableCell>Location</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {scanResults.map((result) => {
+                        const fileName = getFileName(result.path);
+                        return (
+                          <TableRow key={result.path} hover>
+                            <TableCell sx={{ fontWeight: 500 }}>{fileName}</TableCell>
+                            <TableCell>{result.score.toFixed(3)}</TableCell>
+                            <TableCell sx={{ wordBreak: "break-word" }}>{result.path}</TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
               )}
             </Stack>
           </Paper>
