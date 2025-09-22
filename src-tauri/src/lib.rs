@@ -172,7 +172,6 @@ fn parse_png_ztxt_chunk(chunk_data: &[u8], fields: &mut Vec<ExifField>) {
 }
 
 fn parse_png_itxt_chunk(chunk_data: &[u8], fields: &mut Vec<ExifField>) {
-    let mut cursor = 0;
     let keyword_end = match chunk_data.iter().position(|&byte| byte == 0) {
         Some(pos) => pos,
         None => return,
@@ -181,7 +180,7 @@ fn parse_png_itxt_chunk(chunk_data: &[u8], fields: &mut Vec<ExifField>) {
         return;
     }
     let keyword = &chunk_data[..keyword_end];
-    cursor = keyword_end + 1;
+    let mut cursor = keyword_end + 1;
 
     if cursor + 2 > chunk_data.len() {
         return;
