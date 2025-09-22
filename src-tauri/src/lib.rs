@@ -13,14 +13,14 @@ const SUPPORTED_IMAGE_EXTENSIONS: &[&str] = &[
     "jpg", "jpeg", "png", "tif", "tiff", "webp", "heic", "heif", "avif", "bmp",
 ];
 
-#[derive(Serialize)]
+#[derive(Debug, Serialize)]
 pub struct ExifField {
     tag: String,
     ifd: String,
     value: String,
 }
 
-#[derive(Serialize)]
+#[derive(Debug, Serialize)]
 pub struct AestheticMatch {
     path: String,
     score: f64,
@@ -433,6 +433,36 @@ mod tests {
         data
     }
 
+    fn build_png_without_metadata() -> Vec<u8> {
+        fn png_chunk(kind: &[u8; 4], payload: &[u8]) -> Vec<u8> {
+            let mut chunk = Vec::new();
+            chunk.extend_from_slice(&(payload.len() as u32).to_be_bytes());
+            chunk.extend_from_slice(kind);
+            chunk.extend_from_slice(payload);
+            chunk.extend_from_slice(&[0, 0, 0, 0]);
+            chunk
+        }
+
+        let mut data = Vec::new();
+        data.extend_from_slice(&PNG_SIGNATURE);
+
+        let mut ihdr = Vec::new();
+        ihdr.extend_from_slice(&1u32.to_be_bytes());
+        ihdr.extend_from_slice(&1u32.to_be_bytes());
+        ihdr.push(8);
+        ihdr.push(2);
+        ihdr.push(0);
+        ihdr.push(0);
+        ihdr.push(0);
+        data.extend(png_chunk(b"IHDR", &ihdr));
+
+        // Minimal single-pixel IDAT payload.
+        data.extend(png_chunk(b"IDAT", &[0x78, 0x9c, 0x63, 0x00, 0x00, 0x00, 0x02, 0x00, 0x01]));
+
+        data.extend(png_chunk(b"IEND", &[]));
+        data
+    }
+
     fn build_png_with_aesthetic_score(score: &str) -> Vec<u8> {
         fn png_chunk(kind: &[u8; 4], payload: &[u8]) -> Vec<u8> {
             let mut chunk = Vec::new();
@@ -468,8 +498,23 @@ mod tests {
 
     #[test]
     fn png_without_exif_returns_empty_result() {
-        let fields = read_exif(fixture_path("app-logo.png"))
+        let png = build_png_without_metadata();
+        let mut path = std::env::temp_dir();
+        path.push(format!(
+            "exif_viewer_png_empty_{}_{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::write(&path, &png).expect("should write PNG fixture without metadata");
+
+        let fields = read_exif(path.to_string_lossy().into_owned())
             .expect("PNG without metadata should return an empty result");
+
+        std::fs::remove_file(&path).ok();
+
         assert!(fields.is_empty());
     }
 
