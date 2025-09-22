@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720" fill="none">
+  <rect width="1200" height="720" rx="18" fill="#f5f7fa"/>
+  <rect x="32" y="32" width="1136" height="72" rx="12" fill="#0d47a1"/>
+  <text x="64" y="78" fill="#ffffff" font-family="'Segoe UI', sans-serif" font-size="32" font-weight="600">Exif Viewer</text>
+  <rect x="64" y="140" width="360" height="52" rx="8" fill="#ffffff" stroke="#cfd8dc" stroke-width="2"/>
+  <text x="82" y="174" fill="#78909c" font-family="'Segoe UI', sans-serif" font-size="22">No file selected</text>
+  <rect x="448" y="140" width="200" height="52" rx="8" fill="#1e88e5"/>
+  <text x="494" y="173" fill="#ffffff" font-family="'Segoe UI', sans-serif" font-size="22" font-weight="600">Browse for image</text>
+  <rect x="668" y="140" width="200" height="52" rx="8" fill="#455a64"/>
+  <text x="708" y="173" fill="#ffffff" font-family="'Segoe UI', sans-serif" font-size="22">Reload metadata</text>
+  <rect x="64" y="220" width="1072" height="420" rx="14" fill="#ffffff" stroke="#cfd8dc" stroke-width="2"/>
+  <rect x="64" y="220" width="1072" height="64" rx="14" fill="#eceff1"/>
+  <text x="94" y="262" fill="#455a64" font-family="'Segoe UI', sans-serif" font-size="22" font-weight="600">EXIF Metadata</text>
+  <text x="94" y="312" fill="#90a4ae" font-family="'Segoe UI', sans-serif" font-size="18">Tag</text>
+  <text x="394" y="312" fill="#90a4ae" font-family="'Segoe UI', sans-serif" font-size="18">IFD</text>
+  <text x="594" y="312" fill="#90a4ae" font-family="'Segoe UI', sans-serif" font-size="18">Value</text>
+  <rect x="94" y="328" width="1012" height="60" fill="#fafafa"/>
+  <text x="106" y="366" fill="#263238" font-family="'Segoe UI', sans-serif" font-size="20">DateTimeOriginal</text>
+  <text x="406" y="366" fill="#455a64" font-family="'Segoe UI', sans-serif" font-size="18">EXIF</text>
+  <text x="606" y="366" fill="#263238" font-family="'Segoe UI', sans-serif" font-size="18">2024:01:07 18:32:15</text>
+  <rect x="94" y="392" width="1012" height="60" fill="#ffffff"/>
+  <text x="106" y="430" fill="#263238" font-family="'Segoe UI', sans-serif" font-size="20">LensModel</text>
+  <text x="406" y="430" fill="#455a64" font-family="'Segoe UI', sans-serif" font-size="18">EXIF</text>
+  <text x="606" y="430" fill="#263238" font-family="'Segoe UI', sans-serif" font-size="18">EF 35mm f/1.4L II USM</text>
+  <rect x="94" y="456" width="1012" height="60" fill="#fafafa"/>
+  <text x="106" y="494" fill="#263238" font-family="'Segoe UI', sans-serif" font-size="20">CameraSerialNumber</text>
+  <text x="406" y="494" fill="#455a64" font-family="'Segoe UI', sans-serif" font-size="18">EXIF</text>
+  <text x="606" y="494" fill="#263238" font-family="'Segoe UI', sans-serif" font-size="18">216001005837</text>
+  <rect x="64" y="660" width="1072" height="12" rx="6" fill="#cfd8dc"/>
+</svg>
