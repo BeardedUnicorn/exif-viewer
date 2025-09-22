@@ -10,6 +10,7 @@ import {
   Button,
   CircularProgress,
   Container,
+  Divider,
   Paper,
   Stack,
   Table,
@@ -21,6 +22,8 @@ import {
   Toolbar,
   TextField,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 
 interface ExifField {
@@ -85,6 +88,9 @@ function App() {
   const [scanError, setScanError] = useState<string | null>(null);
   const [scanAttempted, setScanAttempted] = useState(false);
   const [minScoreInput, setMinScoreInput] = useState("0.75");
+
+  const theme = useTheme();
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
 
   const hasData = fields.length > 0;
   const hasScanResults = scanResults.length > 0;
@@ -335,8 +341,30 @@ function App() {
               {scanAttempted && !scanLoading && !scanError && !hasScanResults && (
                 <Alert severity="info">No images matched the selected threshold.</Alert>
               )}
-              {hasScanResults && (
-                <TableContainer>
+              {hasScanResults && (isSmallScreen ? (
+                <Stack spacing={2}
+                  divider={<Divider flexItem />}
+                  aria-label="Aesthetic score results list"
+                >
+                  {scanResults.map((result) => {
+                    const fileName = getFileName(result.path);
+                    return (
+                      <Box key={result.path}>
+                        <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+                          {fileName}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          Score: {result.score.toFixed(3)}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary" sx={{ wordBreak: "break-word" }}>
+                          {result.path}
+                        </Typography>
+                      </Box>
+                    );
+                  })}
+                </Stack>
+              ) : (
+                <TableContainer sx={{ overflowX: "auto" }}>
                   <Table size="small" aria-label="Aesthetic score results table">
                     <TableHead>
                       <TableRow>
@@ -359,7 +387,7 @@ function App() {
                     </TableBody>
                   </Table>
                 </TableContainer>
-              )}
+              ))}
             </Stack>
           </Paper>
 
@@ -369,8 +397,27 @@ function App() {
               <Typography variant="body2" color="text.secondary">
                 {summaryText}
               </Typography>
-              {hasData && (
-                <TableContainer>
+              {hasData && (isSmallScreen ? (
+                <Stack spacing={2}
+                  divider={<Divider flexItem />}
+                  aria-label="EXIF metadata list"
+                >
+                  {fields.map((field) => (
+                    <Box key={`${field.ifd}-${field.tag}`}>
+                      <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+                        {field.tag}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {field.ifd}
+                      </Typography>
+                      <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
+                        {field.value}
+                      </Typography>
+                    </Box>
+                  ))}
+                </Stack>
+              ) : (
+                <TableContainer sx={{ overflowX: "auto" }}>
                   <Table size="small" aria-label="EXIF metadata table">
                     <TableHead>
                       <TableRow>
@@ -390,7 +437,7 @@ function App() {
                     </TableBody>
                   </Table>
                 </TableContainer>
-              )}
+              ))}
             </Stack>
           </Paper>
         </Stack>
