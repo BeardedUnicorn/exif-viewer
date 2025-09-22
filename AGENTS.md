@@ -30,6 +30,7 @@
 
 ## Commit & Pull Request Guidelines
 - Use imperative commit subjects similar to `Add folder scanning for aesthetic score filtering`; isolate unrelated changes.
+- Ignore tooling artifacts such as `repomix-output.md`; keep them untracked or delete them before pushing.
 - Reference issues in commit bodies or PR descriptions and note behavioural impact.
 - PRs should list verification steps (`npm run tauri dev`, `cargo test`) plus screenshots or recordings for UI updates.
 - Request maintainer review before merging; prefer squash merges for a tidy history.
